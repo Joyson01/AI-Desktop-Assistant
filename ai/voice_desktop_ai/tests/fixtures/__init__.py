@@ -1,0 +1,1 @@
+"""Deterministic screen and execution fixtures for architecture tests."""

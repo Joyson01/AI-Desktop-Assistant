@@ -1,0 +1,10 @@
+SpeechRecognition
+PyAutoGUI
+pywinauto
+Pillow
+pytesseract
+python-dotenv
+google-genai
+openai
+pyperclip
+PySide6

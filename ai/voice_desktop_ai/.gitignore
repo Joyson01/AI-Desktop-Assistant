@@ -1,0 +1,10 @@
+.env
+__pycache__/
+.pytest_cache/
+*.pyc
+
+*.log
+screen_test.png
+
+.venv*
+

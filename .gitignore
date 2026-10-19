@@ -1,0 +1,33 @@
+# Secrets & Environment variables
+.env
+.env.*
+!.env.example
+
+# Large binary archives & backups
+*.zip
+*.tar.gz
+*.rar
+.git_nested_backup/
+
+# Python Virtual Environments
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor and OS files
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
