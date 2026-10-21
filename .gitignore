@@ -1,0 +1,32 @@
+# Environments
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & Runtime artifacts
+logs/actions.jsonl
+logs/*.log
+*.log
+
+# OS & Editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build / Distribution
+build/
+dist/
+*.egg-info/
