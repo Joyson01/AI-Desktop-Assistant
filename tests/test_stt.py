@@ -19,7 +19,10 @@ from voice.stt import Listener
 
 @pytest.fixture
 def listener():
-    return Listener(language="en-IN")
+    l = Listener(language="en-IN")
+    l._mic_available = True
+    l.microphone = MagicMock()
+    return l
 
 
 @pytest.fixture
@@ -198,6 +201,8 @@ def test_listener_suppression_while_tts_speaking(dummy_audio):
     """Verify audio capture is suppressed while TTS is actively speaking."""
     is_speaking = True
     l = Listener(language="en-IN", is_speaking_check=lambda: is_speaking)
+    l._mic_available = True
+    l.microphone = MagicMock()
     text, conf, status, msg = l.listen_with_diagnostics(timeout=1.0)
     assert text is None
     assert status == "tts_active"

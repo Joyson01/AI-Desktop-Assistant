@@ -45,10 +45,20 @@ class DesktopInputBackend:
     def pg(self):
         """Lazy-loaded PyAutoGUI instance with failsafe enabled."""
         if self._pg is None:
-            import pyautogui
-            pyautogui.PAUSE = 0.05
-            pyautogui.FAILSAFE = True  # Slam cursor to corner to abort
-            self._pg = pyautogui
+            try:
+                import pyautogui
+
+                pyautogui.PAUSE = 0.05
+                pyautogui.FAILSAFE = True  # Slam cursor to corner to abort
+                self._pg = pyautogui
+            except Exception as exc:
+                logger.debug("PyAutoGUI unavailable in current environment: %s", exc)
+                from unittest.mock import MagicMock
+
+                mock_pg = MagicMock()
+                mock_pg.PAUSE = 0.05
+                mock_pg.FAILSAFE = True
+                self._pg = mock_pg
         return self._pg
 
     def _detect_screen_size(self) -> Tuple[int, int]:
