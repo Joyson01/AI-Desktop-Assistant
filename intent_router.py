@@ -437,8 +437,9 @@ def _match(t: str, context: Optional[ConversationContext] = None):
         return Intent("weather", {"city": city or DEFAULT_CITY})
 
     # 13. Visual Click
-    if m := fm(r"click(?: on)? (.+)"):
-        return Intent("click", {"label": m.group(1)})
+    if m := fm(r"(?:click|tap)(?: on)? (.+)"):
+        target = _sanitize_click_target(m.group(1)) or m.group(1).strip()
+        return Intent("click", {"label": target})
 
     # 14. Application & Website Launch
     if m := fm(r"(?:open|launch|start|run) (.+)") or fm(r"(.+?) (?:open|launch|start)"):
@@ -451,6 +452,58 @@ def _match(t: str, context: Optional[ConversationContext] = None):
         if conf < 0.6:
             return Intent("unknown", {"heard": target_name}, conf)
         return Intent("open", {"kind": kind, "target": target, "label": label}, conf)
+
+    return None
+
+
+def _sanitize_click_target(cand: str) -> Optional[str]:
+    """Sanitize and extract the pure UI target label from spoken command text."""
+    if not cand:
+        return None
+    # Strip quotes, punctuation, brackets
+    t = cand.strip(" \t\n\r\"'.,;:!?()[]{}<>`")
+
+    # Strip leading boilerplate: "the ", "a ", "an ", "button ", "link ", "tab ", "icon ", "menu "
+    t = re.sub(r"^(?:the\s+|a\s+|an\s+)?(?:button|link|tab|icon|menu|element|option)\s+(?:labeled\s+|named\s+|called\s+)?", "", t, flags=re.I)
+    t = re.sub(r"^(?:the\s+|a\s+|an\s+)?(?:that\s+says\s+)", "", t, flags=re.I)
+    t = re.sub(r"^(?:the\s+|a\s+|an\s+)", "", t, flags=re.I)
+
+    # Strip trailing boilerplate: " button", " link", " tab", " icon", " menu", " element"
+    t = re.sub(r"\s+(?:button|link|tab|icon|menu|element|option)$", "", t, flags=re.I)
+
+    # Clean punctuation and quotes again
+    t = t.strip(" \t\n\r\"'.,;:!?()[]{}<>`")
+    t = re.sub(r"\s+", " ", t).strip()
+    return t if t else None
+
+
+def extract_click_target(text: str) -> Optional[str]:
+    """Extract intended target text from spoken click commands across English and Hinglish."""
+    s = text.strip()
+    if not s:
+        return None
+
+    # Guard against YouTube video selection commands
+    if re.search(r"\b(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th|\d+st|\d+nd|\d+rd|\d+th)?\s*video\b", s, re.I):
+        return None
+
+    # Hinglish variations: e.g. "File pe click karo", "Settings par click", "Chrome click karo"
+    if m := re.match(r"^(?:kripya|please|zara)?\s*(.+?)\s+(?:pe|par|me|mein)\s+click(?:\s+(?:karo|kar|kijiye|kar do|kardo))?$", s, re.I):
+        return _sanitize_click_target(m.group(1))
+
+    if m := re.match(r"^(?:kripya|please|zara)?\s*click(?:\s+(?:karo|kar|kijiye))\s+(?:on\s+)?(.+?)(?:\s+(?:pe|par|me|mein))?$", s, re.I):
+        return _sanitize_click_target(m.group(1))
+
+    if m := re.match(r"^(?:kripya|please|zara)?\s*(.+?)\s+click\s+(?:karo|kar|kijiye|kar do|kardo)$", s, re.I):
+        return _sanitize_click_target(m.group(1))
+
+    # English variations: e.g. "click on File", "click File", "click the File button"
+    if m := re.match(r"^(?:please\s+)?(?:click|tap)(?:\s+on)?\s+(.+?)(?:\s+please)?$", s, re.I):
+        return _sanitize_click_target(m.group(1))
+
+    # Link / button search phrasing: "find the link that says Chrome"
+    if m := re.match(r"^(?:find|locate)\s+(?:the\s+)?(?:link|button|element)(?:\s+(?:that\s+says|labeled|named|called))?\s+(.+)$", s, re.I):
+        return _sanitize_click_target(m.group(1))
 
     return None
 
@@ -510,6 +563,10 @@ class IntentRouter:
         if m := re.match(r"^(?:dhoondo|dhundo|khojo|khoj)\s+(.+)$", body, re.I):
             q = m.group(1).strip()
             return Intent("web_search", {"query": q}, raw=text)
+
+        # 5. Visual UI click commands with sanitized target labels
+        if click_target := extract_click_target(body):
+            return Intent("click", {"label": click_target}, raw=text)
 
         t = normalize(body)
         if not t:

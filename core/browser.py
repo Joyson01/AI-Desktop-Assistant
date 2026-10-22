@@ -206,12 +206,15 @@ class BrowserAutomation:
                 return False, f"Cancelled clicking '{clean_label}'."
 
         self.perception.invalidate_cache()
-        target = self.perception.find_target(clean_label)
-        if not target:
-            return False, f"Could not find any element matching '{clean_label}' on the screen."
+        match_result = self.perception.find_target_detailed(clean_label)
 
-        ok, msg = self.input.click_coordinate(target.x, target.y)
-        if ok:
-            self.perception.invalidate_cache()
-            return True, f"Clicked '{target.text}'."
-        return False, msg
+        if match_result.status == "found" and match_result.element:
+            target = match_result.element
+            ok, msg = self.input.click_coordinate(target.x, target.y)
+            if ok:
+                self.perception.invalidate_cache()
+                return True, f"Clicked '{target.text}'."
+            return False, msg
+
+        # Return clear feedback from perception engine (ambiguity, not found, or capture failure)
+        return False, match_result.message

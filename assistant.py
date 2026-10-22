@@ -251,7 +251,17 @@ class Assistant:
 
             # Execute via ActionExecutor
             reply = self.executor.execute(plan.intent)
-            success = not reply.lower().startswith("sorry, that failed")
+            lower_reply = reply.lower()
+            is_failure = (
+                lower_reply.startswith("sorry, that failed")
+                or lower_reply.startswith("could not find")
+                or lower_reply.startswith("multiple elements")
+                or lower_reply.startswith("click failed")
+                or lower_reply.startswith("target coordinates")
+                or lower_reply.startswith("could not capture")
+                or lower_reply.startswith("cancelled clicking")
+            )
+            success = not is_failure
 
             # Determine verification level
             verif_level = (
